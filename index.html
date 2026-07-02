@@ -285,22 +285,22 @@ function unlockAudio() {
 document.addEventListener('touchstart', unlockAudio, { passive: true });
 document.addEventListener('click', unlockAudio);
 
-
 startBtn.addEventListener('click', () => {
     if (isSpinning) return;
 
-// ⭐ここに前のサイトのコードをそのまま貼り付けます！
+    // 1. 【iOS対策】クリックした瞬間に決定音を鳴らす！
     const firstAudio = document.getElementById("audio_kettei");
     if (firstAudio) {
         firstAudio.muted = false;
         firstAudio.volume = 1.0;
         firstAudio.play().catch(e => console.log("iOS対策再生失敗:", e));
     }
-    
+
+    // 2. ルーレットを「回転中」にする
     isSpinning = true;
     startBtn.disabled = true;
 
-    // リセット処理
+    // 3. 画面のリセット処理
     rouletteWrap.style.display = "block";
     resultWrap.style.display = "none";
     fairyImg.style.display = "none";
@@ -312,7 +312,6 @@ startBtn.addEventListener('click', () => {
     const todayStr = new Date().toISOString().split('T')[0];
     const savedDate = localStorage.getItem('fairy_roulette_date');
     const savedColor = localStorage.getItem('fairy_roulette_color');
-
     let targetColor = "";
     let isSecondTime = false;
 
@@ -330,88 +329,73 @@ startBtn.addEventListener('click', () => {
     const colorIndex = COLORS.indexOf(targetColor);
     const oneSlice = 360 / 7;
     const targetAngle = (colorIndex * oneSlice) + (oneSlice / 2);
-    const totalRotation = (5 * 360) - targetAngle; 
+    const totalRotation = (5 * 360) - targetAngle;
 
-    // 回転！
+    // 回転スタート！
     board.style.transform = `rotate(${totalRotation}deg)`;
-    new Audio('roulette.mp3').play().catch(()=>{});
     
+    // ルーレットが回る音（もしあれば）
+    new Audio('roulette.mp3').play().catch(()=>{});
+
     // --- 3. 4秒後：止まったら画面切り替え ---
     setTimeout(() => {
-        new Audio('kachi.mp3').play().catch(()=>{});
-
+        // 先ほど入れたカチッという音をここで鳴らす！
+        new Audio('kachi.mp3').play().catch(()=>{}); 
+        
         rouletteWrap.style.display = "none";
         resultWrap.style.display = "flex";
 
         // --- 4. コンパクトが倒れてフェアリーが出る演出 ---
         setTimeout(() => {
             compactImg.classList.add('compact-fall');
-
+            
             setTimeout(() => {
                 new Audio('kirakira.mp3').play().catch(()=>{});
                 
                 const fairy = FAIRY_DATA[targetColor];
-                fairyImg.src = fairy.img; 
-                fairyImg.classList.add('fairy-appear'); 
+                fairyImg.src = fairy.img;
+                fairyImg.classList.add('fairy-appear');
+                
                 setTimeout(() => {
                     fairyImg.classList.add('fairy-float');
                 }, 600);
-                serifuBox.innerText = `${fairy.name} が あらわれた！`;
                 
+                serifuBox.innerText = `${fairy.name} が あらわれた！`;
 
                 // --- 5. ボイスおしゃべり ---
                 setTimeout(() => {
                     let voiceFile = "";
-                   // if (isSecondTime) {
-                    if (false) {
+                    if (false) { // テスト用に一回目のセリフを固定
                         voiceFile = fairy.again;
                         serifuBox.innerText = "";
                     } else {
                         const randomVoiceIndex = Math.floor(Math.random() * 3);
                         voiceFile = fairy.voices[randomVoiceIndex];
-                        serifuBox.innerText = "";
+                        serifuBox.innerText = ""; 
                     }
-// 🔴 修正：空のAudioオブジェクトを一度作ってから、src を指定して load() する
-    // これを挟むことで、iPhoneが「さっきボタンを押した時のAudioの続きだな」と認識してくれます
-    const mainVoice = new Audio();
-    mainVoice.src = voiceFile;
-    mainVoice.load(); // 事前ロードを強制
 
-    // 少しだけ（0.1秒）待ってから再生する
-    setTimeout(() => {
-        mainVoice.play().catch((e) => {
-            console.log("再生エラー:", e);
-        });
-    }, 100);
+                    // iPhoneでもおしゃべりが鳴るように事前ロードする対策
+                    const mainVoice = new Audio();
+                    mainVoice.src = voiceFile;
+                    mainVoice.load();
 
-    mainVoice.onended = () => {
-        isSpinning = false;
-        startBtn.disabled = false;
+                    setTimeout(() => {
+                        mainVoice.play().catch((e) => {
+                            console.log("再生エラー:", e);
+                        });
+                    }, 100);
 
-    /* 一旦コメントアウトしておく
-    if (isSecondTime) {
-        const randomVoiceIndex = Math.floor(Math.random() * 3);
-        const extraVoice = new Audio(fairy.voices[randomVoiceIndex]);
-        serifuBox.innerText = "「今日のおしゃべりだよ♪」";
-        extraVoice.play().catch(()=>{});
-        extraVoice.onended = () => {
-            isSpinning = false;
-            startBtn.disabled = false;
-        };
-    } else {
-        isSpinning = false;
-        startBtn.disabled = false;
-    }
-    */
-};
+                    mainVoice.onended = () => {
+                        isSpinning = false;
+                        startBtn.disabled = false;
                     };
                 }, 500);
 
-            }, 500); 
-
+            }, 500);
         }, 2000);
     }, 4000);
 });
+
 </script>
 
 </body>
