@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>フェアリールーレット</title>
     <style>
         body {
@@ -13,9 +14,25 @@
             background-color: #fce4ec; /* パステルピンク */
             font-family: 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
+            overflow: hidden;
         }
 
-        /* 演出エリア（ルーレットやコンパクトが出る場所） */
+        /* iPhone対策：音を出すための初回タップ案内用の帯 */
+        .audio-guide {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #ff4081;
+            color: white;
+            text-align: center;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            font-weight: bold;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
         .stage {
             width: 360px;
             height: 360px;
@@ -24,7 +41,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            perspective: 800px; /* 3Dの奥行き感を少し強めました */
+            perspective: 800px;
         }
 
         /* ==========================================
@@ -53,7 +70,6 @@
             transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
         }
 
-        /* 上部の矢印（針） */
         .roulette-arrow {
             position: absolute;
             top: -25px;
@@ -85,12 +101,11 @@
             display: none;
             width: 320px;
             height: 320px;
-            position: relative; /* 子要素を重ねるため relative に */
+            position: relative;
             align-items: center;
             justify-content: center;
         }
         
-        /* コンパクトとフェアリー共通のベーススタイル */
         .result-wrap img {
             position: absolute;
             max-width: 90%;
@@ -99,27 +114,23 @@
             filter: drop-shadow(0 8px 15px rgba(0,0,0,0.15));
         }
 
-        /* コンパクトの初期状態 */
         .compact-img {
             z-index: 1;
-            transform-origin: bottom center; /* 下側を軸にして倒れるように */
+            transform-origin: bottom center;
             transition: transform 0.5s ease-in;
         }
 
-        /* コンパクトがパタンと奥に倒れて横たわる（消さない） */
         .compact-fall {
-            transform: rotateX(75deg) scale(0.95) translateY(30px); /* 75度倒して少し奥へずらす */
+            transform: rotateX(75deg) scale(0.95) translateY(30px);
             filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
         }
 
-        /* フェアリーの初期状態（最初は非表示） */
         .fairy-img {
             display: none;
-            z-index: 2; /* コンパクトの前に重ねる */
-            bottom: 40px; /* コンパクトの少し上に浮いているように見せる */
+            z-index: 2;
+            bottom: 40px;
         }
 
-        /* フェアリーがじわっと現れるアニメーション */
         .fairy-appear {
             display: block !important;
             animation: fadeInEffect 0.6s ease-out forwards;
@@ -161,10 +172,39 @@
             color: #c2185b;
             min-height: 1.5em;
             text-align: center;
+            padding: 0 20px;
+        }
+
+        /* スマホ用のレスポンシブ調整 */
+        @media screen and (max-width: 480px) {
+            .stage {
+                width: 85vw;
+                height: 85vw;
+                margin-bottom: 20px;
+            }
+            .roulette-wrap, .result-wrap {
+                width: 100%;
+                height: 100%;
+            }
+            .start-btn {
+                padding: 14px 45px;
+                font-size: 1.3rem;
+            }
+            .serifu-box {
+                font-size: 1.2rem;
+            }
+            .fairy-img {
+                bottom: 10%;
+            }
         }
     </style>
 </head>
 <body>
+
+<!-- iPhone用の注意書き兼、音のロック解除を促す帯 -->
+<div class="audio-guide" id="audioGuide">
+    🔊 iPhoneの方は本体横の消音(マナー)モードを解除してください
+</div>
 
 <div class="stage">
     <!-- ① ルーレットエリア -->
@@ -173,7 +213,7 @@
         <div class="roulette-board" id="board"></div>
     </div>
 
-    <!-- ② 結果表示エリア（コンパクトとフェアリーを別々にする） -->
+    <!-- ② 結果表示エリア -->
     <div class="result-wrap" id="resultWrap">
         <img src="compact.png" alt="コンパクト" class="compact-img" id="compactImg">
         <img src="" alt="フェアリー" class="fairy-img" id="fairyImg">
@@ -194,7 +234,6 @@ const FAIRY_DATA = {
     white:  { name: "ホワイトフェアリー", img: "fairy_white.png",  voices: ["white_1.wav", "white_2.wav", "white_3.wav"],   again: "white_again.wav" }
 };
 
-// ルーレットの見た目（時計回り）と同じ順番
 const COLORS = ["pink", "blue", "green", "purple", "yellow", "orange", "white"];
 
 const board = document.getElementById('board');
@@ -204,8 +243,34 @@ const resultWrap = document.getElementById('resultWrap');
 const compactImg = document.getElementById('compactImg');
 const fairyImg = document.getElementById('fairyImg');
 const serifuBox = document.getElementById('serifuBox');
+const audioGuide = document.getElementById('audioGuide');
 
 let isSpinning = false;
+let audioUnlocked = false;
+
+// ★iPhone対策：ユーザーが画面を最初にタップした瞬間に、空の音を再生してブラウザの音声を解放する処理
+function unlockAudio() {
+    if (audioUnlocked) return;
+    
+    // 空の音声データを作成して一瞬だけ再生する
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const buffer = context.createBuffer(1, 1, 22050);
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+    source.start(0);
+
+    audioUnlocked = true;
+    audioGuide.style.display = "none"; // ロック解除されたら案内を隠す
+    
+    // イベントリスナーを解除
+    document.removeEventListener('touchstart', unlockAudio);
+    document.removeEventListener('click', unlockAudio);
+}
+// スマホのタップ、パソコンのクリック両方に対応
+document.addEventListener('touchstart', unlockAudio, { passive: true });
+document.addEventListener('click', unlockAudio);
+
 
 startBtn.addEventListener('click', () => {
     if (isSpinning) return;
@@ -251,22 +316,19 @@ startBtn.addEventListener('click', () => {
     setTimeout(() => {
         new Audio('kachi.wav').play().catch(()=>{});
 
-        // ルーレットを隠して結果エリアを表示（最初は直立したコンパクトが見える）
         rouletteWrap.style.display = "none";
         resultWrap.style.display = "flex";
 
         // --- 4. コンパクトが倒れてフェアリーが出る演出 ---
         setTimeout(() => {
-            // コンパクトをパタンと倒す
             compactImg.classList.add('compact-fall');
 
-            // 倒れたタイミング（500ms後）でフェアリーをその上に登場させる
             setTimeout(() => {
                 new Audio('syalararan.wav').play().catch(()=>{});
                 
                 const fairy = FAIRY_DATA[targetColor];
-                fairyImg.src = fairy.img; // フェアリーの画像をセット
-                fairyImg.classList.add('fairy-appear'); // ふわっと出現
+                fairyImg.src = fairy.img; 
+                fairyImg.classList.add('fairy-appear'); 
                 
                 serifuBox.innerText = `${fairy.name} が あらわれた！`;
 
@@ -302,7 +364,7 @@ startBtn.addEventListener('click', () => {
                     };
                 }, 500);
 
-            }, 500); // 倒れるアニメーション（0.5秒）に合わせる
+            }, 500); 
 
         }, 300);
     }, 4000);
