@@ -228,12 +228,11 @@
         <img src="compact.png" alt="コンパクト" class="compact-img" id="compactImg">
         <img src="" alt="フェアリー" class="fairy-img" id="fairyImg">
     </div>
-
+</div>
     <!-- 音声プレイヤーの配置 -->
     <audio id="audio_kettei" src="決定ボタンを押す12.mp3"></audio>
     <audio id="audio_kirakira" src="きらきら輝く3.mp3"></audio>
     <audio id="audio_tsushin" src="カーソル移動11.mp3"></audio>
-</div>
 
 <button class="start-btn" id="startBtn">ルーレットスタート</button>
 <div class="serifu-box" id="serifuBox"></div>
@@ -289,6 +288,15 @@ document.addEventListener('click', unlockAudio);
 
 startBtn.addEventListener('click', () => {
     if (isSpinning) return;
+
+// ⭐ここに前のサイトのコードをそのまま貼り付けます！
+    const firstAudio = document.getElementById("audio_kettei");
+    if (firstAudio) {
+        firstAudio.muted = false;
+        firstAudio.volume = 1.0;
+        firstAudio.play().catch(e => console.log("iOS対策再生失敗:", e));
+    }
+    
     isSpinning = true;
     startBtn.disabled = true;
 
