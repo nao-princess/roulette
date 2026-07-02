@@ -146,6 +146,16 @@
                 opacity: 1;
             }
         }
+        /* ★ ここから追加：上下に15pxゆっくり往復するアニメーション */
+@keyframes fuwafuwa {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* ★ ここから追加：ふわふわ動かすためのクラス */
+.fairy-float {
+    animation: fuwafuwa 2s ease-in-out infinite;
+}
 
         /* ==========================================
            3. ボタンとテキスト
@@ -329,8 +339,11 @@ startBtn.addEventListener('click', () => {
                 const fairy = FAIRY_DATA[targetColor];
                 fairyImg.src = fairy.img; 
                 fairyImg.classList.add('fairy-appear'); 
-                
+                setTimeout(() => {
+                    fairyImg.classList.add('fairy-float');
+                }, 600);
                 serifuBox.innerText = `${fairy.name} が あらわれた！`;
+                
 
                 // --- 5. ボイスおしゃべり ---
                 setTimeout(() => {
