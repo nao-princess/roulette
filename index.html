@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>フェアリールーレット</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #fce4ec; /* パステルピンク */
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+        }
+
+        /* 演出エリア（ルーレットやコンパクトが出る場所） */
+        .stage {
+            width: 360px;
+            height: 360px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* ==========================================
+           1. ルーレットの見た目
+        ========================================== */
+        .roulette-wrap {
+            width: 320px;
+            height: 320px;
+            position: relative;
+        }
+
+        .roulette-board {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #fff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            background: conic-gradient(
+                #ff8da1 0deg 51.43deg,     /* pink */
+                #5da9ff 51.43deg 102.86deg, /* blue */
+                #62d083 102.86deg 154.29deg,/* green */
+                #b388ff 154.29deg 205.72deg,/* purple */
+                #fff176 205.72deg 257.15deg,/* yellow */
+                #ffb74d 257.15deg 308.58deg,/* orange */
+                #ffffff 308.58deg 360deg    /* white */
+            );
+            transition: transform 4s cubic-bezier(0.1, 0.8, 0.1, 1);
+        }
+
+        /* 上部の矢印（針） */
+        .roulette-arrow {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 40px solid #ff4081;
+            transform: translateX(-50%); 
+            filter: drop-shadow(0 4px 5px rgba(0,0,0,0.15));
+            z-index: 10;
+        }
+        .roulette-arrow::after {
+            content: '';
+            position: absolute;
+            top: -55px;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background-color: #ff4081;
+            border-radius: 50%;
+        }
+
+        /* ==========================================
+           2. 結果（コンパクト・フェアリー）の見た目
+        ========================================== */
+        .result-wrap {
+            display: none; /* 最初は完全に存在を隠す */
+            width: 280px;
+            height: 280px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 8px 15px rgba(0,0,0,0.15));
+        }
+
+        /* シャラララ〜ン変身アニメーション（じわっと大きくなって回転） */
+        .henshin-animation {
+            animation: henshinEffect 0.8s ease-in-out;
+        }
+
+        @keyframes henshinEffect {
+            0% { transform: scale(0.3) rotate(0deg); filter: brightness(1); }
+            50% { transform: scale(1.2) rotate(180deg); filter: brightness(1.8) drop-shadow(0 0 15px #fff); }
+            100% { transform: scale(1) rotate(360deg); filter: brightness(1); }
+        }
+
+        /* ==========================================
+           3. ボタンとテキスト
+        ========================================== */
+        .start-btn {
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(45deg, #ff4081, #ff80ab);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 64, 129, 0.4);
+        }
+        .start-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .serifu-box {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #c2185b;
+            min-height: 1.5em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <!-- ① ルーレットエリア -->
+        <div class="roulette-wrap" id="rouletteWrap">
+            <div class="roulette-arrow"></div>
+            <div class="roulette-board" id="board"></div>
+        </div>
+
+        <!-- ② 結果表示エリア（最初は非表示、画像タグをシンプルに） -->
+        <div class="result-wrap" id="resultWrap">
+            <img src="compact.png" alt="コンパクト" class="result-img" id="resultImg">
+        </div>
+    </div>
+
+    <button class="start-btn" id="startBtn">ルーレットスタート</button>
+    <div class="serifu-box" id="serifuBox"></div>
+
+    <script>
+        const FAIRY_DATA = {
+            pink:   { name: "ピンクフェアリー",   img: "fairy_pink.png",   voices: ["pink_1.wav", "pink_2.wav", "pink_3.wav"],   again: "pink_again.wav" },
+            blue:   { name: "ブルーフェアリー",   img: "fairy_blue.png",   voices: ["blue_1.wav", "blue_2.wav", "blue_3.wav"],   again: "blue_again.wav" },
+            green:  { name: "グリーンフェアリー", img: "fairy_green.png",  voices: ["green_1.wav", "green_2.wav", "green_3.wav"],   again: "green_again.wav" },
+            purple: { name: "パープルフェアリー", img: "fairy_purple.png", voices: ["purple_1.wav", "purple_2.wav", "purple_3.wav"], again: "purple_again.wav" },
+            yellow: { name: "イエローフェアリー", img: "fairy_yellow.png", voices: ["yellow_1.wav", "yellow_2.wav", "yellow_3.wav"], again: "yellow_again.wav" },
+            orange: { name: "オレンジフェアリー", img: "fairy_orange.png", voices: ["orange_1.wav", "orange_2.wav", "orange_3.wav"], again: "orange_again.wav" },
+            white:  { name: "ホワイトフェアリー", img: "fairy_white.png",  voices: ["white_1.wav", "white_2.wav", "white_3.wav"],   again: "white_again.wav" }
+        };
+        
+        // 針（12時）の位置に合わせるための色の並び
+        const COLORS = ["pink", "white", "orange", "yellow", "purple", "green", "blue"];
+
+        const board = document.getElementById('board');
+        const startBtn = document.getElementById('startBtn');
+        const rouletteWrap = document.getElementById('rouletteWrap');
+        const resultWrap = document.getElementById('resultWrap');
+        const resultImg = document.getElementById('resultImg');
+        const serifuBox = document.getElementById('serifuBox');
+
+        let isSpinning = false;
+
+        startBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            isSpinning = true;
+            startBtn.disabled = true;
+            
+            // リセット処理
+            rouletteWrap.style.display = "block";
+            resultWrap.style.display = "none";
+            resultImg.src = "compact.png"; 
+            resultImg.classList.remove('henshin-animation');
+            serifuBox.innerText = "";
+
+            // --- 1. 日付チェック ---
+            const todayStr = new Date().toISOString().split('T')[0];
+            const savedDate = localStorage.getItem('fairy_roulette_date');
+            const savedColor = localStorage.getItem('fairy_roulette_color');
+
+            let targetColor = "";
+            let isSecondTime = false;
+
+            if (savedDate === todayStr && savedColor) {
+                targetColor = savedColor;
+                isSecondTime = true;
+            } else {
+                const randomIndex = Math.floor(Math.random() * COLORS.length);
+                targetColor = COLORS[randomIndex];
+                localStorage.setItem('fairy_roulette_date', todayStr);
+                localStorage.setItem('fairy_roulette_color', targetColor);
+            }
+
+            // --- 2. 回転角度計算 ---
+            const colorIndex = COLORS.indexOf(targetColor);
+            const oneSlice = 360 / 7;
+            const targetAngle = (colorIndex * oneSlice) + (oneSlice / 2);
+            const totalRotation = (5 * 360) + targetAngle;
+
+            // 回転！
+            board.style.transform = `rotate(${totalRotation}deg)`;
+
+            // --- 3. 4秒後：止まったら画面切り替え ---
+            setTimeout(() => {
+                // カチッ音
+                new Audio('kachi.wav').play().catch(()=>{}); 
+
+                // ルーレットを非表示にして、コンパクトを表示！
+                rouletteWrap.style.display = "none";
+                resultWrap.style.display = "flex";
+
+                // --- 4. その直後に変身（シャラララ〜ン） ---
+                setTimeout(() => {
+                    new Audio('syalararan.wav').play().catch(()=>{});
+                    resultImg.classList.add('henshin-animation');
+                    
+                    // 回転アニメーションの途中で画像をフェアリーにすり替える
+                    setTimeout(() => {
+                        const fairy = FAIRY_DATA[targetColor];
+                        resultImg.src = fairy.img; // ここで fairy_pink.png などに変わる
+                        serifuBox.innerText = `${fairy.name} が あらわれた！`;
+
+                        // --- 5. ボイスおしゃべり ---
+                        setTimeout(() => {
+                            let voiceFile = "";
+                            if (isSecondTime) {
+                                voiceFile = fairy.again;
+                                serifuBox.innerText = "「また会ったね♪」";
+                            } else {
+                                const randomVoiceIndex = Math.floor(Math.random() * 3);
+                                voiceFile = fairy.voices[randomVoiceIndex];
+                                serifuBox.innerText = "「こんにちは！今日もお話ししよう！」";
+                            }
+
+                            const mainVoice = new Audio(voiceFile);
+                            mainVoice.play().catch(()=>{});
+
+                            mainVoice.onended = () => {
+                                if (isSecondTime) {
+                                    // 2回目なら続けてランダム通常ボイス
+                                    const randomVoiceIndex = Math.floor(Math.random() * 3);
+                                    const extraVoice = new Audio(fairy.voices[randomVoiceIndex]);
+                                    serifuBox.innerText = "「今日のおしゃべりだよ♪」";
+                                    extraVoice.play().catch(()=>{});
+                                    extraVoice.onended = () => { isSpinning = false; startBtn.disabled = false; };
+                                } else {
+                                    isSpinning = false;
+                                    startBtn.disabled = false;
+                                }
+                            };
+                        }, 500);
+                    }, 400); // 0.8秒のアニメーションのちょうど真ん中で画像を切り替え
+                }, 300);
+            }, 4000);
+        });
+    </script>
+</body>
+</html>
