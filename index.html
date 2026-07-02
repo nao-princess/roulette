@@ -361,20 +361,27 @@ startBtn.addEventListener('click', () => {
                     const mainVoice = new Audio(voiceFile);
                     mainVoice.play().catch(()=>{});
 
-                    mainVoice.onended = () => {
-                        if (isSecondTime) {
-                            const randomVoiceIndex = Math.floor(Math.random() * 3);
-                            const extraVoice = new Audio(fairy.voices[randomVoiceIndex]);
-                            serifuBox.innerText = "「今日のおしゃべりだよ♪」";
-                            extraVoice.play().catch(()=>{});
-                            extraVoice.onended = () => {
-                                isSpinning = false;
-                                startBtn.disabled = false;
-                            };
-                        } else {
-                            isSpinning = false;
-                            startBtn.disabled = false;
-                        }
+                   mainVoice.onended = () => {
+    // 2回目判定を無視して、1回鳴ったらすぐ終了（ボタンを押せる状態）にする
+    isSpinning = false;
+    startBtn.disabled = false;
+
+    /* 一旦コメントアウトしておく
+    if (isSecondTime) {
+        const randomVoiceIndex = Math.floor(Math.random() * 3);
+        const extraVoice = new Audio(fairy.voices[randomVoiceIndex]);
+        serifuBox.innerText = "「今日のおしゃべりだよ♪」";
+        extraVoice.play().catch(()=>{});
+        extraVoice.onended = () => {
+            isSpinning = false;
+            startBtn.disabled = false;
+        };
+    } else {
+        isSpinning = false;
+        startBtn.disabled = false;
+    }
+    */
+};
                     };
                 }, 500);
 
