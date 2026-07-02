@@ -24,7 +24,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            perspective: 600px; /* 3D効果（コンパクトが倒れる立体感）を出すための設定 */
+            perspective: 800px; /* 3Dの奥行き感を少し強めました */
         }
 
         /* ==========================================
@@ -79,50 +79,59 @@
         }
 
         /* ==========================================
-           2. 結果（コンパクト・フェアリー）の見た目
+           2. 結果（コンパクト・フェアリーを重ねる）
         ========================================== */
         .result-wrap {
-            display: none; /* 最初は完全に存在を隠す */
-            width: 280px;
-            height: 280px;
+            display: none;
+            width: 320px;
+            height: 320px;
+            position: relative; /* 子要素を重ねるため relative に */
             align-items: center;
             justify-content: center;
         }
-        .result-img {
-            max-width: 100%;
-            max-height: 100%;
+        
+        /* コンパクトとフェアリー共通のベーススタイル */
+        .result-wrap img {
+            position: absolute;
+            max-width: 90%;
+            max-height: 90%;
             object-fit: contain;
             filter: drop-shadow(0 8px 15px rgba(0,0,0,0.15));
         }
 
-        /* コンパクトが手前にパタンと倒れるアニメーション */
+        /* コンパクトの初期状態 */
+        .compact-img {
+            z-index: 1;
+            transform-origin: bottom center; /* 下側を軸にして倒れるように */
+            transition: transform 0.5s ease-in;
+        }
+
+        /* コンパクトがパタンと奥に倒れて横たわる（消さない） */
         .compact-fall {
-            animation: fallDownEffect 0.5s ease-in forwards;
+            transform: rotateX(75deg) scale(0.95) translateY(30px); /* 75度倒して少し奥へずらす */
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
+        }
+
+        /* フェアリーの初期状態（最初は非表示） */
+        .fairy-img {
+            display: none;
+            z-index: 2; /* コンパクトの前に重ねる */
+            bottom: 40px; /* コンパクトの少し上に浮いているように見せる */
         }
 
         /* フェアリーがじわっと現れるアニメーション */
         .fairy-appear {
+            display: block !important;
             animation: fadeInEffect 0.6s ease-out forwards;
-        }
-
-        @keyframes fallDownEffect {
-            0% {
-                transform: rotateX(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: rotateX(90deg); /* パタンと完全に倒れる */
-                opacity: 0;
-            }
         }
 
         @keyframes fadeInEffect {
             0% {
-                transform: scale(0.7);
+                transform: scale(0.4) translateY(40px);
                 opacity: 0;
             }
             100% {
-                transform: scale(1);
+                transform: scale(1) translateY(0);
                 opacity: 1;
             }
         }
@@ -164,9 +173,10 @@
         <div class="roulette-board" id="board"></div>
     </div>
 
-    <!-- ② 結果表示エリア -->
+    <!-- ② 結果表示エリア（コンパクトとフェアリーを別々にする） -->
     <div class="result-wrap" id="resultWrap">
-        <img src="compact.png" alt="コンパクト" class="result-img" id="resultImg">
+        <img src="compact.png" alt="コンパクト" class="compact-img" id="compactImg">
+        <img src="" alt="フェアリー" class="fairy-img" id="fairyImg">
     </div>
 </div>
 
@@ -184,14 +194,15 @@ const FAIRY_DATA = {
     white:  { name: "ホワイトフェアリー", img: "fairy_white.png",  voices: ["white_1.wav", "white_2.wav", "white_3.wav"],   again: "white_again.wav" }
 };
 
-// 【修正】ルーレットの見た目（時計回り）と同じ順番に並び替えました
+// ルーレットの見た目（時計回り）と同じ順番
 const COLORS = ["pink", "blue", "green", "purple", "yellow", "orange", "white"];
 
 const board = document.getElementById('board');
 const startBtn = document.getElementById('startBtn');
 const rouletteWrap = document.getElementById('rouletteWrap');
 const resultWrap = document.getElementById('resultWrap');
-const resultImg = document.getElementById('resultImg');
+const compactImg = document.getElementById('compactImg');
+const fairyImg = document.getElementById('fairyImg');
 const serifuBox = document.getElementById('serifuBox');
 
 let isSpinning = false;
@@ -204,8 +215,9 @@ startBtn.addEventListener('click', () => {
     // リセット処理
     rouletteWrap.style.display = "block";
     resultWrap.style.display = "none";
-    resultImg.src = "compact.png";
-    resultImg.classList.remove('compact-fall', 'fairy-appear');
+    fairyImg.style.display = "none";
+    compactImg.classList.remove('compact-fall');
+    fairyImg.classList.remove('fairy-appear');
     serifuBox.innerText = "";
 
     // --- 1. 日付チェック ---
@@ -230,7 +242,6 @@ startBtn.addEventListener('click', () => {
     const colorIndex = COLORS.indexOf(targetColor);
     const oneSlice = 360 / 7;
     const targetAngle = (colorIndex * oneSlice) + (oneSlice / 2);
-    // ルーレット盤自体を逆に計算して針（12時）に合わせる
     const totalRotation = (5 * 360) - targetAngle; 
 
     // 回転！
@@ -238,28 +249,24 @@ startBtn.addEventListener('click', () => {
 
     // --- 3. 4秒後：止まったら画面切り替え ---
     setTimeout(() => {
-        // カチッ音
         new Audio('kachi.wav').play().catch(()=>{});
 
-        // ルーレットを非表示にして、コンパクトを表示
+        // ルーレットを隠して結果エリアを表示（最初は直立したコンパクトが見える）
         rouletteWrap.style.display = "none";
         resultWrap.style.display = "flex";
 
-        // --- 4. その直後にコンパクトが倒れる演出 ---
+        // --- 4. コンパクトが倒れてフェアリーが出る演出 ---
         setTimeout(() => {
-            // コンパクトをパタンと倒すアニメーション開始
-            resultImg.classList.add('compact-fall');
+            // コンパクトをパタンと倒す
+            compactImg.classList.add('compact-fall');
 
-            // 倒れきったタイミング（500ms後）でフェアリーに変身
+            // 倒れたタイミング（500ms後）でフェアリーをその上に登場させる
             setTimeout(() => {
                 new Audio('syalararan.wav').play().catch(()=>{});
                 
                 const fairy = FAIRY_DATA[targetColor];
-                resultImg.src = fairy.img; // 画像をフェアリーに切り替え
-                
-                // 倒れるクラスを外し、フェアリー出現アニメーションをつける
-                resultImg.classList.remove('compact-fall');
-                resultImg.classList.add('fairy-appear');
+                fairyImg.src = fairy.img; // フェアリーの画像をセット
+                fairyImg.classList.add('fairy-appear'); // ふわっと出現
                 
                 serifuBox.innerText = `${fairy.name} が あらわれた！`;
 
@@ -295,7 +302,7 @@ startBtn.addEventListener('click', () => {
                     };
                 }, 500);
 
-            }, 500); // fallDownEffect の時間（0.5秒）に合わせる
+            }, 500); // 倒れるアニメーション（0.5秒）に合わせる
 
         }, 300);
     }, 4000);
