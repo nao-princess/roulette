@@ -351,11 +351,11 @@ startBtn.addEventListener('click', () => {
                    // if (isSecondTime) {
                     if (false) {
                         voiceFile = fairy.again;
-                        serifuBox.innerText = "「また会ったね♪」";
+                        serifuBox.innerText = "";
                     } else {
                         const randomVoiceIndex = Math.floor(Math.random() * 3);
                         voiceFile = fairy.voices[randomVoiceIndex];
-                        serifuBox.innerText = "「こんにちは！今日もお話ししよう！」";
+                        serifuBox.innerText = "";
                     }
 // 🔴 修正：空のAudioオブジェクトを一度作ってから、src を指定して load() する
     // これを挟むことで、iPhoneが「さっきボタンを押した時のAudioの続きだな」と認識してくれます
