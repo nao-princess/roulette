@@ -334,10 +334,11 @@ startBtn.addEventListener('click', () => {
 
     // 回転！
     board.style.transform = `rotate(${totalRotation}deg)`;
-
+    new Audio('roulette.mp3').play().catch(()=>{});
+    
     // --- 3. 4秒後：止まったら画面切り替え ---
     setTimeout(() => {
-        new Audio('kachi.wav').play().catch(()=>{});
+        new Audio('kachi.mp3').play().catch(()=>{});
 
         rouletteWrap.style.display = "none";
         resultWrap.style.display = "flex";
@@ -347,7 +348,7 @@ startBtn.addEventListener('click', () => {
             compactImg.classList.add('compact-fall');
 
             setTimeout(() => {
-                new Audio('syalararan.wav').play().catch(()=>{});
+                new Audio('kirakira.mp3').play().catch(()=>{});
                 
                 const fairy = FAIRY_DATA[targetColor];
                 fairyImg.src = fairy.img; 
