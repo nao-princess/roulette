@@ -215,7 +215,6 @@
 <div class="audio-guide" id="audioGuide">
     🔊 iPhoneの方は本体横の消音(マナー)モードを解除してください
 </div>
-
 <div class="stage">
     <!-- ① ルーレットエリア -->
     <div class="roulette-wrap" id="rouletteWrap">
@@ -228,14 +227,16 @@
         <img src="compact.png" alt="コンパクト" class="compact-img" id="compactImg">
         <img src="" alt="フェアリー" class="fairy-img" id="fairyImg">
     </div>
-</div>
-    <!-- 音声プレイヤーの配置 -->
-    <audio id="audio_kettei" src="決定ボタンを押す12.mp3"></audio>
-    <audio id="audio_kirakira" src="きらきら輝く3.mp3"></audio>
-    <audio id="audio_tsushin" src="カーソル移動11.mp3"></audio>
+</div> <!-- 💡 stageを閉じるのはこの1個だけでOK！ -->
+
+<!-- 音声プレイヤーの配置 -->
+<audio id="audio_kettei" src="決定ボタンを押す12.mp3"></audio>
+<audio id="audio_kirakira" src="きらきら輝く3.mp3"></audio>
+<audio id="audio_tsushin" src="カーソル移動11.mp3"></audio>
 
 <button class="start-btn" id="startBtn">ルーレットスタート</button>
 <div class="serifu-box" id="serifuBox"></div>
+
 <script>
 const FAIRY_DATA = {
     pink:   { name: "ピンクフェアリー",   img: "fairy_pink.png",   voices: ["pink_1.wav", "pink_2.wav", "pink_3.wav"],   again: "pink_again.wav" },
