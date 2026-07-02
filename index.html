@@ -236,7 +236,6 @@
 
 <button class="start-btn" id="startBtn">ルーレットスタート</button>
 <div class="serifu-box" id="serifuBox"></div>
-
 <script>
 const FAIRY_DATA = {
     pink:   { name: "ピンクフェアリー",   img: "fairy_pink.png",   voices: ["pink_1.wav", "pink_2.wav", "pink_3.wav"],   again: "pink_again.wav" },
@@ -265,23 +264,18 @@ let audioUnlocked = false;
 // ★iPhone対策：ユーザーが画面を最初にタップした瞬間に、空の音を再生してブラウザの音声を解放する処理
 function unlockAudio() {
     if (audioUnlocked) return;
-    
-    // 空の音声データを作成して一瞬だけ再生する
     const context = new (window.AudioContext || window.webkitAudioContext)();
     const buffer = context.createBuffer(1, 1, 22050);
     const source = context.createBufferSource();
     source.buffer = buffer;
     source.connect(context.destination);
     source.start(0);
-
     audioUnlocked = true;
-    audioGuide.style.display = "none"; // ロック解除されたら案内を隠す
-    
-    // イベントリスナーを解除
+    audioGuide.style.display = "none";
     document.removeEventListener('touchstart', unlockAudio);
     document.removeEventListener('click', unlockAudio);
 }
-// スマホのタップ、パソコンのクリック両方に対応
+
 document.addEventListener('touchstart', unlockAudio, { passive: true });
 document.addEventListener('click', unlockAudio);
 
@@ -395,8 +389,8 @@ startBtn.addEventListener('click', () => {
         }, 2000);
     }, 4000);
 });
-
 </script>
+
 
 </body>
 </html>
