@@ -130,31 +130,40 @@
             z-index: 2;
             bottom: 40px;
         }
+/* ==========================================
+   妖精の出現＆ふわふわアニメーション（修正版）
+   ========================================== */
 
-        .fairy-appear {
-            display: block !important;
-            animation: fadeInEffect 0.6s ease-out forwards;
-        }
-
-        @keyframes fadeInEffect {
-            0% {
-                transform: scale(0.4) translateY(40px);
-                opacity: 0;
-            }
-            100% {
-                transform: scale(1) translateY(0);
-                opacity: 1;
-            }
-        }
-        /* ★ ここから追加：上下に15pxゆっくり往復するアニメーション */
-@keyframes fuwafuwa {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
+/* 妖精の初期位置と出現アニメーション */
+.fairy-appear {
+    display: block !important;
+    animation: fairyFadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-/* ★ ここから追加：ふわふわ動かすためのクラス */
+@keyframes fairyFadeIn {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -30%) scale(0.3); /* スマホでも中央から */
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);   /* 綺麗にど真ん中に着地 */
+    }
+}
+
+/* 💡 つづりミスを修正（.faiy-float から .fairy-float に変更） */
 .fairy-float {
-    animation: fuwafuwa 2s ease-in-out infinite;
+    animation: fairyFadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+               fairyFloating 3s ease-in-out infinite 0.8s; /* 登場後にふわふわ開始 */
+}
+
+@keyframes fairyFloating {
+    0%, 100% {
+        transform: translate(-50%, -50%);
+    }
+    50% {
+        transform: translate(-50%, -58%); /* 上下に心地よく揺れる */
+    }
 }
 
         /* ==========================================
