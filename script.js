@@ -102,8 +102,7 @@ startBtn.addEventListener('click', () => {
         // ② カチッ音（kachi.mp3）を鳴らす
         const kachiAudio = new Audio('kachi.mp3');
         kachiAudio.play().catch(e => console.log("kachi再生エラー:", e));
-
-        // ③ 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
+// ③ 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
         const flashBg = document.createElement('div');
         Object.assign(flashBg.style, {
             position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
@@ -116,9 +115,41 @@ startBtn.addEventListener('click', () => {
             setTimeout(() => flashBg.remove(), 400);
         });
 
+        // ==========================================
+        // ✨ ③-2 【ルーレットマスの強調】ここを追加！
+        // ==========================================
+        // 止まったマス（中心の矢印の場所＝真上 0度）に、ピカピカ光る強調レイヤーを重ねる
+        const highlightSector = document.createElement('div');
+        Object.assign(highlightSector.style, {
+            position: 'absolute',
+            top: '0', left: '0', width: '100%', height: '100%',
+            borderRadius: '50%',
+            // 真上の位置（-25.7度 〜 25.7度）だけを真っ白（半透明）に光らせる
+            background: 'conic-gradient(from 334.3deg, rgba(255,255,255,0.8) 0deg, rgba(255,255,255,0.8) 51.4deg, transparent 51.4deg)',
+            zIndex: '10', // ルーレットの盤面より上に重ねる
+            pointerEvents: 'none',
+            transform: `rotate(${-totalRotation}deg)`, // ルーレット盤の回転と逆方向に回して真上に固定
+            animation: 'blinkEffect 0.15s ease-in-out infinite' // ピカピカ点滅
+        });
+
+        // 点滅用のアニメーションCSSを一時的に追加
+        if (!document.getElementById('roulette-blink-style')) {
+            const style = document.createElement('style');
+            style.id = 'roulette-blink-style';
+            style.innerHTML = `@keyframes blinkEffect { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }`;
+            document.head.appendChild(style);
+        }
+
+        // ルーレットの親要素（board）の中に光るマスをドッキング
+        board.appendChild(highlightSector);
+
+        // ボイスが終わってコンパクト画面に切り替わる時、または次のスタート時に消去する
+        // ==========================================
+
         // ④ 【カラーボイス】ここで「ピンク〜！」（pink.wavなど）を再生！
         const colorVoice = new Audio(`${targetColor}.wav`); 
         colorVoice.load();
+
 
         // カチッ音のすぐ後（100ms後）に「ピンク〜！」ボイスを再生
         setTimeout(() => {
