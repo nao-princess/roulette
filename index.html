@@ -258,7 +258,6 @@ const compactImg = document.getElementById('compactImg');
 const fairyImg = document.getElementById('fairyImg');
 const serifuBox = document.getElementById('serifuBox');
 const audioGuide = document.getElementById('audioGuide');
-
 let isSpinning = false;
 let audioUnlocked = false;
 
@@ -355,18 +354,15 @@ startBtn.addEventListener('click', () => {
             setTimeout(() => flashBg.remove(), 400);
         });
 
-        // ④ 【カラーボイス】「ピンク〜！」などの声をロードして再生
-        // FAIRY_DATAからランダムにボイスファイル名を取得
-        const voices = FAIRY_DATA[targetColor].voices;
-        const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
-        const colorVoice = new Audio(randomVoiceFile);
+        // ④ 【カラーボイス】ここで「ピンク〜！」（pink.wavなど）を再生！
+        const colorVoice = new Audio(`${targetColor}.wav`); 
         colorVoice.load();
 
-        // カチッ音の余韻のために200msだけ待ってからボイスを再生
+        // カチッ音のすぐ後（100ms後）に「ピンク〜！」ボイスを再生
         setTimeout(() => {
-            colorVoice.play().catch(e => console.log("ボイス再生エラー:", e));
+            colorVoice.play().catch(e => console.log("カラーボイス再生エラー:", e));
 
-            // ⑤ 【ボイス終了後】コンパクトがふわっと現れ、しゃらら〜ん
+            // ⑤ 【「ピンク〜！」ボイス終了後】コンパクトがふわっと現れ、しゃらら〜ん
             colorVoice.onended = () => {
                 // ルーレットを隠して結果エリア（コンパクト）を表示
                 rouletteWrap.style.display = "none";
@@ -388,7 +384,7 @@ startBtn.addEventListener('click', () => {
                     kirakiraAudio.currentTime = 0;
                     kirakiraAudio.play().catch(e => console.log("きらきら音再生エラー:", e));
                     
-                    // ⑥ 【しゃらら〜ん終了後】妖精が出てくる！
+                    // ⑥ 【しゃらら〜ん（きらきら音）終了後】ついに妖精が出てくる！
                     kirakiraAudio.onended = () => {
                         // 当選した色の妖精画像と名前を設定
                         fairyImg.src = FAIRY_DATA[targetColor].img;
@@ -397,9 +393,18 @@ startBtn.addEventListener('click', () => {
                         // アニメーション用クラス（ふわふわ浮く効果など）を付与
                         fairyImg.classList.add('fairy-appear', 'fairy-float');
 
-                        // すべての変身演出が完了したので、ボタンを復帰
-                        isSpinning = false;
-                        startBtn.disabled = false;
+                        // ⑦ 【妖精が出てきたら】ランダムボイス（pink_1.wavなど）を再生！
+                        const voices = FAIRY_DATA[targetColor].voices;
+                        const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
+                        const fairyVoice = new Audio(randomVoiceFile);
+                        
+                        fairyVoice.play().catch(e => console.log("妖精ボイス再生エラー:", e));
+
+                        // すべての演出が完了したので、ボタンを復帰
+                        fairyVoice.onended = () => {
+                            isSpinning = false;
+                            startBtn.disabled = false;
+                        };
                     };
                 } else {
                     // 万が一きらきら音が取得できなかった場合のフォールバック
@@ -407,10 +412,11 @@ startBtn.addEventListener('click', () => {
                     startBtn.disabled = false;
                 }
             };
-        }, 200);
+        }, 100);
 
-    }, 4000); // 💡 transitionの4秒（4000ms）に合わせて停止処理を動かします
+    }, 4000); // 💡 ルーレットの回転時間（4秒）に合わせて停止処理を動かします
 });
+
 </script>
 
 
