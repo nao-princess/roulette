@@ -125,15 +125,16 @@
             filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
         }
 /* ==========================================
-   妖精の出現＆ふわふわアニメーション（完全中央固定版）
+   妖精の出現＆ふわふわアニメーション（相対位置修正版）
    ========================================== */
 
+/* 💡 親要素（resultWrapなど）を基準にするため、!importantを外して元の配置ルールに合わせます */
 .fairy-img {
-    /* 💡 スマホで位置がズレるのを防ぐため、ベースの位置設定をここで強制固定します */
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    display: none; /* 初期状態は非表示 */
+    position: absolute;
+    /* もし元のCSSで top や left が指定されていたら、そちらに合わせるために一旦リセット */
+    transform: translate(-50%, -50%) scale(0); 
+    display: none;
+    z-index: 20; /* コンパクトより確実に手前に表示 */
 }
 
 /* 妖精の出現アニメーション */
@@ -145,13 +146,13 @@
 @keyframes fairyFadeIn {
     0% {
         opacity: 0;
-        /* left: 50%, top: 50% の位置（ど真ん中）を基準にして、少し上から縮小して登場 */
-        transform: translate(-50%, -30%) scale(0.3) !important; 
+        /* 元の位置の少し上（-30%）から縮小して登場 */
+        transform: translate(-50%, -30%) scale(0.3); 
     }
     100% {
         opacity: 1;
-        /* 完全に画面のど真ん中に着地 */
-        transform: translate(-50%, -50%) scale(1) !important;   
+        /* 元の位置（-50%）に綺麗に着地 */
+        transform: translate(-50%, -50%) scale(1);   
     }
 }
 
@@ -163,11 +164,11 @@
 
 @keyframes fairyFloating {
     0%, 100% {
-        transform: translate(-50%, -50%) scale(1) !important;
+        transform: translate(-50%, -50%) scale(1);
     }
     50% {
-        /* ど真ん中から綺麗に真上だけにふわっと浮く */
-        transform: translate(-50%, -58%) scale(1) !important; 
+        /* 上下に心地よく揺れる */
+        transform: translate(-50%, -58%) scale(1); 
     }
 }
 
