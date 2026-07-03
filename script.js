@@ -1,11 +1,11 @@
 const FAIRY_DATA = {
     pink:   { name: "ももぴぃ",   img: "fairy_pink.png",   voices: ["pink_1.wav", "pink_2.wav", "pink_3.wav"],   again: "pink_again.wav" },
     blue:   { name: "あおぴぃ",   img: "fairy_blue.png",   voices: ["blue_1.wav", "blue_2.wav", "blue_3.wav"],   again: "blue_again.wav" },
-    green:  { name: "みどぴぃ", img: "fairy_green.png",  voices: ["green_1.wav", "green_2.wav", "green_3.wav"],   again: "green_again.wav" },
-    purple: { name: "むらぴぃ", img: "fairy_purple.png", voices: ["purple_1.wav", "purple_2.wav", "purple_3.wav"], again: "purple_again.wav" },
-    yellow: { name: "きいぴぃ", img: "fairy_yellow.png", voices: ["yellow_1.wav", "yellow_2.wav", "yellow_3.wav"], again: "yellow_again.wav" },
-    orange: { name: "おれぴぃ", img: "fairy_orange.png", voices: ["orange_1.wav", "orange_2.wav", "orange_3.wav"], again: "orange_again.wav" },
-    white:  { name: "しろぴぃ", img: "fairy_white.png",  voices: ["white_1.wav", "white_2.wav", "white_3.wav"],   again: "white_again.wav" }
+    green:  { name: "みどぴぃ",   img: "fairy_green.png",  voices: ["green_1.wav", "green_2.wav", "green_3.wav"],   again: "green_again.wav" },
+    purple: { name: "むらぴぃ",   img: "fairy_purple.png", voices: ["purple_1.wav", "purple_2.wav", "purple_3.wav"], again: "purple_again.wav" },
+    yellow: { name: "きいぴぃ",   img: "fairy_yellow.png", voices: ["yellow_1.wav", "yellow_2.wav", "yellow_3.wav"], again: "yellow_again.wav" },
+    orange: { name: "おれぴぃ",   img: "fairy_orange.png", voices: ["orange_1.wav", "orange_2.wav", "orange_3.wav"], again: "orange_again.wav" },
+    white:  { name: "しろぴぃ",   img: "fairy_white.png",  voices: ["white_1.wav", "white_2.wav", "white_3.wav"],   again: "white_again.wav" }
 };
 
 const COLORS = ["pink", "blue", "green", "purple", "yellow", "orange", "white"];
@@ -102,7 +102,8 @@ startBtn.addEventListener('click', () => {
         // ② カチッ音（kachi.mp3）を鳴らす
         const kachiAudio = new Audio('kachi.mp3');
         kachiAudio.play().catch(e => console.log("kachi再生エラー:", e));
-// ③ 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
+
+        // ③ 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
         const flashBg = document.createElement('div');
         Object.assign(flashBg.style, {
             position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
@@ -115,95 +116,83 @@ startBtn.addEventListener('click', () => {
             setTimeout(() => flashBg.remove(), 400);
         });
 
-        // ==========================================
-        // ✨ ③-2 【ルーレットマスの強調】ここを追加！
-        // ==========================================
-        // 止まったマス（中心の矢印の場所＝真上 0度）に、ピカピカ光る強調レイヤーを重ねる
+        // ③-2 【ルーレットマスの強調】
         const highlightSector = document.createElement('div');
         Object.assign(highlightSector.style, {
-            position: 'absolute',
-            top: '0', left: '0', width: '100%', height: '100%',
+            position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
             borderRadius: '50%',
-            // 真上の位置（-25.7度 〜 25.7度）だけを真っ白（半透明）に光らせる
             background: 'conic-gradient(from 334.3deg, rgba(255,255,255,0.8) 0deg, rgba(255,255,255,0.8) 51.4deg, transparent 51.4deg)',
-            zIndex: '10', // ルーレットの盤面より上に重ねる
+            zIndex: '10',
             pointerEvents: 'none',
-            transform: `rotate(${-totalRotation}deg)`, // ルーレット盤の回転と逆方向に回して真上に固定
-            animation: 'blinkEffect 0.4s ease-in-out infinite' // ピカピカ点滅
+            transform: `rotate(${-totalRotation}deg)`,
+            animation: 'blinkEffect 0.4s ease-in-out infinite'
         });
 
-        // 点滅用のアニメーションCSSを一時的に追加
         if (!document.getElementById('roulette-blink-style')) {
             const style = document.createElement('style');
             style.id = 'roulette-blink-style';
             style.innerHTML = `@keyframes blinkEffect { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }`;
             document.head.appendChild(style);
         }
-
-        // ルーレットの親要素（board）の中に光るマスをドッキング
         board.appendChild(highlightSector);
-
-        // ボイスが終わってコンパクト画面に切り替わる時、または次のスタート時に消去する
-        // ==========================================
 
         // ④ 【カラーボイス】ここで「ピンク〜！」（pink.wavなど）を再生！
         const colorVoice = new Audio(`${targetColor}.wav`); 
         colorVoice.load();
 
-
         // カチッ音のすぐ後（100ms後）に「ピンク〜！」ボイスを再生
         setTimeout(() => {
             colorVoice.play().catch(e => console.log("カラーボイス再生エラー:", e));
 
-            // ⑤ 【「ピンク〜！」ボイス終了後】結果エリアを表示し、コンパクトをパタンと倒す！
+            // ⑤ 【「ピンク〜！」ボイス終了後】の処理
             colorVoice.onended = () => {
-　　　　setTimeout(() => {
-                    // 待った後に、マスの光を消して画面をコンパクトに切り替える
-                    highlightSector.remove();
-                
-                // ルーレットを隠して結果エリアを表示
-                rouletteWrap.style.display = "none";
-                resultWrap.style.display = "flex";
-                
-                // 元々CSSに用意されていた「パタンと奥に倒れるクラス」を適用する
+                // 💡 ボイスが終わってから【1.5秒（1500ms）】ルーレット画面のまま待つ
                 setTimeout(() => {
-                    compactImg.classList.add('compact-fall');
-                }, 1000);
-
-                // しゃらら〜ん音（きらきら輝く3.mp3）を再生
-                const kirakiraAudio = document.getElementById("audio_kirakira");
-                if (kirakiraAudio) {
-                    kirakiraAudio.currentTime = 0;
-                    kirakiraAudio.play().catch(e => console.log("きらきら音再生エラー:", e));
+                    // 待った後に、マスの光を消して画面をコンパクトに切り替える
+                    highlightSector.remove(); 
+                    rouletteWrap.style.display = "none";
+                    resultWrap.style.display = "flex";
                     
-                    // ⑥ 【しゃらら〜ん終了後】ついにコンパクトの奥から妖精が出てくる！
-                    kirakiraAudio.onended = () => {
-                        // 当選した色の妖精画像と名前を設定
-                        fairyImg.src = FAIRY_DATA[targetColor].img;
-                        serifuBox.innerText = FAIRY_DATA[targetColor].name;
-                        
-                        // アニメーション用クラス（ふわっと出現 ＋ ふわふわ浮く効果）を付与
-                        fairyImg.classList.add('fairy-appear', 'fairy-float');
+                    // さらにその1秒後（1000ms後）にコンパクトをパタンと倒す
+                    setTimeout(() => {
+                        compactImg.classList.add('compact-fall');
+                    }, 1000);
 
-                        // ⑦ 【妖精が出てきたら】ランダムボイス（pink_1.wavなど）を再生！
-                        const voices = FAIRY_DATA[targetColor].voices;
-                        const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
-                        const fairyVoice = new Audio(randomVoiceFile);
+                    // しゃらら〜ん音（きらきら輝く3.mp3）を再生
+                    const kirakiraAudio = document.getElementById("audio_kirakira");
+                    if (kirakiraAudio) {
+                        kirakiraAudio.currentTime = 0;
+                        kirakiraAudio.play().catch(e => console.log("きらきら音再生エラー:", e));
                         
-                        fairyVoice.play().catch(e => console.log("妖精ボイス再生エラー:", e));
+                        // ⑥ 【しゃらら〜ん終了後】ついにコンパクトの奥から妖精が出てくる！
+                        kirakiraAudio.onended = () => {
+                            // 当選した色の妖精画像と名前を設定
+                            fairyImg.src = FAIRY_DATA[targetColor].img;
+                            serifuBox.innerText = FAIRY_DATA[targetColor].name;
+                            
+                            // アニメーション用クラス（ふわっと出現 ＋ ふわふわ浮く効果）を付与
+                            fairyImg.classList.add('fairy-appear', 'fairy-float');
 
-                        // すべての演出が完了したので、ボタンを復帰
-                        fairyVoice.onended = () => {
-                            isSpinning = false;
-                            startBtn.disabled = false;
+                            // ⑦ 【妖精が出てきたら】ランダムボイス（pink_1.wavなど）を再生！
+                            const voices = FAIRY_DATA[targetColor].voices;
+                            const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
+                            const fairyVoice = new Audio(randomVoiceFile);
+                            
+                            fairyVoice.play().catch(e => console.log("妖精ボイス再生エラー:", e));
+
+                            // すべての演出が完了したので、ボタンを復帰
+                            fairyVoice.onended = () => {
+                                isSpinning = false;
+                                startBtn.disabled = false;
+                            };
                         };
-                    };
-                } else {
-                    // 万が一きらきら音が取得できなかった場合のフォールバック
-                    isSpinning = false;
-                    startBtn.disabled = false;
-                }
-            };1500};
+                    } else {
+                        // 万が一きらきら音が取得できなかった場合のフォールバック
+                        isSpinning = false;
+                        startBtn.disabled = false;
+                    }
+                }, 1500); // 👈 ここが1.5秒待つ指定です！
+            };
         }, 100);
 
     }, 4000); // ルーレットの回転時間（4秒）に合わせて停止処理を動かします
