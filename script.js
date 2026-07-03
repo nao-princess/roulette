@@ -146,54 +146,59 @@ startBtn.addEventListener('click', () => {
 
             // ⑤ 【「ピンク〜！」ボイス終了後】の処理
             colorVoice.onended = () => {
-                // 💡 ボイスが終わってから【1.5秒（1500ms）】ルーレット画面のまま待つ
+                // ボイスが終わってから【1.5秒（1500ms）】ルーレット画面のまま待つ
                 setTimeout(() => {
-                    // 待った後に、マスの光を消して画面をコンパクトに切り替える
+                    // マスの光を消して画面をコンパクトに切り替える
                     highlightSector.remove(); 
                     rouletteWrap.style.display = "none";
                     resultWrap.style.display = "flex";
                     
-                    // さらにその1秒後（1000ms後）にコンパクトをパタンと倒す
+                    // 妖精を出現させる共通の関数（しゃらら〜ん音の終了時、またはエラー時に呼ぶ）
+                    const showFairyAndPlayVoice = () => {
+                        // 当選した色の妖精画像と名前を設定
+                        fairyImg.src = FAIRY_DATA[targetColor].img;
+                        serifuBox.innerText = FAIRY_DATA[targetColor].name;
+                        fairyImg.style.display = "block";
+                        
+                        // アニメーション用クラス（ふわっと出現 ＋ ふわふわ浮く効果）を付与
+                        fairyImg.classList.add('fairy-appear', 'fairy-float');
+
+                        // ⑦ 【妖精が出てきたら】ランダムボイス（pink_1.wavなど）を再生！
+                        const voices = FAIRY_DATA[targetColor].voices;
+                        const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
+                        const fairyVoice = new Audio(randomVoiceFile);
+                        
+                        fairyVoice.play().catch(e => console.log("妖精ボイス再生エラー:", e));
+
+                        // すべての演出が完了したので、ボタンを復帰
+                        fairyVoice.onended = () => {
+                            isSpinning = false;
+                            startBtn.disabled = false;
+                        };
+                    };
+
+                    // 💡 動的に「kirakira.mp3」（しゃらら〜ん）をロードして再生する形に変更！
+                    const kirakiraAudio = new Audio('kirakira.mp3');
+                    
+                    // さらにその1秒後（1000ms後）にコンパクトをパタンと倒して、同時に音を鳴らす
                     setTimeout(() => {
                         compactImg.classList.add('compact-fall');
+                        
+                        kirakiraAudio.play()
+                            .then(() => {
+                                // 音声再生が始まったら、終了時に妖精を出す
+                                kirakiraAudio.onended = showFairyAndPlayVoice;
+                            })
+                            .catch(e => {
+                                console.log("きらきら音再生エラー（スキップして妖精を出します）:", e);
+                                // 音声エラー（ファイルがない等）が起きても、1.5秒後に自動で妖精を出してフリーズを防ぐ
+                                setTimeout(showFairyAndPlayVoice, 1500);
+                            });
                     }, 1000);
 
-                    // しゃらら〜ん音（きらきら輝く3.mp3）を再生
-                    const kirakiraAudio = document.getElementById("audio_kirakira");
-                    if (kirakiraAudio) {
-                        kirakiraAudio.currentTime = 0;
-                        kirakiraAudio.play().catch(e => console.log("きらきら音再生エラー:", e));
-                        
-                        // ⑥ 【しゃらら〜ん終了後】ついにコンパクトの奥から妖精が出てくる！
-                        kirakiraAudio.onended = () => {
-                            // 当選した色の妖精画像と名前を設定
-                            fairyImg.src = FAIRY_DATA[targetColor].img;
-                            serifuBox.innerText = FAIRY_DATA[targetColor].name;
-                            
-                            // アニメーション用クラス（ふわっと出現 ＋ ふわふわ浮く効果）を付与
-                            fairyImg.classList.add('fairy-appear', 'fairy-float');
-
-                            // ⑦ 【妖精が出てきたら】ランダムボイス（pink_1.wavなど）を再生！
-                            const voices = FAIRY_DATA[targetColor].voices;
-                            const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
-                            const fairyVoice = new Audio(randomVoiceFile);
-                            
-                            fairyVoice.play().catch(e => console.log("妖精ボイス再生エラー:", e));
-
-                            // すべての演出が完了したので、ボタンを復帰
-                            fairyVoice.onended = () => {
-                                isSpinning = false;
-                                startBtn.disabled = false;
-                            };
-                        };
-                    } else {
-                        // 万が一きらきら音が取得できなかった場合のフォールバック
-                        isSpinning = false;
-                        startBtn.disabled = false;
-                    }
-                }, 1500); // 👈 ここが1.5秒待つ指定です！
+                }, 1500);
             };
         }, 100);
 
-    }, 4000); // ルーレットの回転時間（4秒）に合わせて停止処理を動かします
+    }, 4000);
 });
