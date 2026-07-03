@@ -129,14 +129,14 @@ startBtn.addEventListener('click', () => {
             zIndex: '10', // ルーレットの盤面より上に重ねる
             pointerEvents: 'none',
             transform: `rotate(${-totalRotation}deg)`, // ルーレット盤の回転と逆方向に回して真上に固定
-            animation: 'blinkEffect 0.15s ease-in-out infinite' // ピカピカ点滅
+            animation: 'blinkEffect 0.4s ease-in-out infinite' // ピカピカ点滅
         });
 
         // 点滅用のアニメーションCSSを一時的に追加
         if (!document.getElementById('roulette-blink-style')) {
             const style = document.createElement('style');
             style.id = 'roulette-blink-style';
-            style.innerHTML = `@keyframes blinkEffect { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }`;
+            style.innerHTML = `@keyframes blinkEffect { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.8; } }`;
             document.head.appendChild(style);
         }
 
@@ -157,6 +157,10 @@ startBtn.addEventListener('click', () => {
 
             // ⑤ 【「ピンク〜！」ボイス終了後】結果エリアを表示し、コンパクトをパタンと倒す！
             colorVoice.onended = () => {
+　　　　setTimeout(() => {
+                    // 待った後に、マスの光を消して画面をコンパクトに切り替える
+                    highlightSector.remove();
+                
                 // ルーレットを隠して結果エリアを表示
                 rouletteWrap.style.display = "none";
                 resultWrap.style.display = "flex";
@@ -164,7 +168,7 @@ startBtn.addEventListener('click', () => {
                 // 元々CSSに用意されていた「パタンと奥に倒れるクラス」を適用する
                 setTimeout(() => {
                     compactImg.classList.add('compact-fall');
-                }, 1500);
+                }, 1000);
 
                 // しゃらら〜ん音（きらきら輝く3.mp3）を再生
                 const kirakiraAudio = document.getElementById("audio_kirakira");
@@ -199,7 +203,7 @@ startBtn.addEventListener('click', () => {
                     isSpinning = false;
                     startBtn.disabled = false;
                 }
-            };
+            };1500};
         }, 100);
 
     }, 4000); // ルーレットの回転時間（4秒）に合わせて停止処理を動かします
