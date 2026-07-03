@@ -262,6 +262,10 @@ const audioGuide = document.getElementById('audioGuide');
 let isSpinning = false;
 let audioUnlocked = false;
 
+// ルーレットの回転音用プレイヤーを動的に作成
+const rouletteAudio = new Audio('roulette.mp3');
+rouletteAudio.loop = true; // 回転中はループ再生
+
 // ★iPhone対策：ユーザーが画面を最初にタップした瞬間に、空の音を再生してブラウザの音声を解放する処理
 function unlockAudio() {
     if (audioUnlocked) return;
@@ -276,7 +280,6 @@ function unlockAudio() {
     document.removeEventListener('touchstart', unlockAudio);
     document.removeEventListener('click', unlockAudio);
 }
-
 document.addEventListener('touchstart', unlockAudio, { passive: true });
 document.addEventListener('click', unlockAudio);
 
@@ -295,24 +298,21 @@ startBtn.addEventListener('click', () => {
     isSpinning = true;
     startBtn.disabled = true;
 
-    // 3. 画面のリセット処理
+    // 3. 画面のリセット処理（前の結果を消す）
     rouletteWrap.style.display = "block";
     resultWrap.style.display = "none";
     fairyImg.style.display = "none";
-    compactImg.classList.remove('compact-fall');
-    fairyImg.classList.remove('fairy-appear');
+    fairyImg.className = "fairy-img"; // クラスもリセット
     serifuBox.innerText = "";
 
-    // --- 1. 日付チェック ---
+    // --- 1. 日付チェックと色の決定 ---
     const todayStr = new Date().toISOString().split('T')[0];
     const savedDate = localStorage.getItem('fairy_roulette_date');
     const savedColor = localStorage.getItem('fairy_roulette_color');
     let targetColor = "";
-    let isSecondTime = false;
 
     if (savedDate === todayStr && savedColor) {
         targetColor = savedColor;
-        isSecondTime = true;
     } else {
         const randomIndex = Math.floor(Math.random() * COLORS.length);
         targetColor = COLORS[randomIndex];
@@ -326,107 +326,90 @@ startBtn.addEventListener('click', () => {
     const targetAngle = (colorIndex * oneSlice) + (oneSlice / 2);
     const totalRotation = (5 * 360) - targetAngle;
 
-    // 回転スタート！
+    // 4. ルーレット回転スタート！
     board.style.transform = `rotate(${totalRotation}deg)`;
     
-    // ルーレットが回る音（もしあれば）
-    new Audio('roulette.mp3').play().catch(()=>{});
-
-  // --- ルーレットが停止した瞬間の処理 ---
-
-// 1. まず回転音（ピピピピ…）を止める
-if (rouletteAudio) {
-    rouletteAudio.pause();
+    // 5. ルーレット中の「ピピピピ…」音を再生
     rouletteAudio.currentTime = 0;
-}
+    rouletteAudio.play().catch(e => console.log("roulette音再生エラー:", e));
 
-// 2. カチッ音（kachi.mp3）を鳴らす
-const kachiAudio = new Audio('kachi.mp3');
-kachiAudio.play().catch(e => console.log("kachi再生エラー:", e));
+    // 6. 4秒後（ルーレットがピタッと止まる瞬間）に演出リレーを開始！
+    setTimeout(() => {
+        // ① ルーレット回転音（ピピピピ）を止める
+        rouletteAudio.pause();
 
-// 3. 当選した色を取得 (例: 'pink', 'blue', 'yellow' など)
-// ※お使いの変数名（resultColor や currentFairy.color など）に合わせて変更してください
-const resultColor = currentFairy.color; 
+        // ② カチッ音（kachi.mp3）を鳴らす
+        const kachiAudio = new Audio('kachi.mp3');
+        kachiAudio.play().catch(e => console.log("kachi再生エラー:", e));
 
-// 4. 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
-const flashBg = document.createElement('div');
-Object.assign(flashBg.style, {
-    position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-    backgroundColor: resultColor, opacity: '0.7', zIndex: '9999',
-    pointerEvents: 'none', transition: 'opacity 0.4s ease-out'
-});
-document.body.appendChild(flashBg);
-requestAnimationFrame(() => {
-    flashBg.style.opacity = '0';
-    setTimeout(() => flashBg.remove(), 400);
-});
+        // ③ 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
+        const flashBg = document.createElement('div');
+        Object.assign(flashBg.style, {
+            position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
+            backgroundColor: targetColor, opacity: '0.7', zIndex: '9999',
+            pointerEvents: 'none', transition: 'opacity 0.4s ease-out'
+        });
+        document.body.appendChild(flashBg);
+        requestAnimationFrame(() => {
+            flashBg.style.opacity = '0';
+            setTimeout(() => flashBg.remove(), 400);
+        });
 
-// 5. 【カラーボイス】「ピンク〜！」などの声をロード（iPhone対策で先にload）
-const randomNum = Math.floor(Math.random() * 3) + 1; // 1〜3のランダム
-const colorVoice = new Audio(`${resultColor}_${randomNum}.wav`);
-colorVoice.load();
+        // ④ 【カラーボイス】「ピンク〜！」などの声をロードして再生
+        // FAIRY_DATAからランダムにボイスファイル名を取得
+        const voices = FAIRY_DATA[targetColor].voices;
+        const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
+        const colorVoice = new Audio(randomVoiceFile);
+        colorVoice.load();
 
-// カチッ音からほんの少し遅らせて（200ms後）色名ボイスを再生
-setTimeout(() => {
-    colorVoice.play().catch(e => console.log("ボイス再生エラー:", e));
+        // カチッ音の余韻のために200msだけ待ってからボイスを再生
+        setTimeout(() => {
+            colorVoice.play().catch(e => console.log("ボイス再生エラー:", e));
 
-    // 6. 【ボイス終了後】コンパクトが登場 ＆ しゃらら〜ん
-    colorVoice.onended = () => {
-        const compactImg = document.getElementById('compact-image'); // コンパクトのimg要素
-        const kirakiraAudio = new Audio('kirakira.mp3'); // しゃらら〜ん音
-        
-        if (compactImg) {
-            // 最初は透明で小さくしておく
-            compactImg.style.opacity = '0';
-            compactImg.style.transform = 'scale(0.3)';
-            compactImg.style.display = 'block';
-            compactImg.style.transition = 'opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-            
-            // ふわっと弾むように現れる
-            requestAnimationFrame(() => {
-                compactImg.style.opacity = '1';
-                compactImg.style.transform = 'scale(1.0)';
-            });
-        }
-
-        // 「しゃらら〜ん」音を再生
-        kirakiraAudio.play().catch(e => console.log("きらきら音再生エラー:", e));
-
-        // 7. 【しゃらら〜ん終了後】妖精がドーンと登場！
-        kirakiraAudio.onended = () => {
-            const fairyImg = document.getElementById('fairy-image'); // 妖精のimg要素
-            
-            if (fairyImg) {
-                // 当選した色の妖精画像に切り替える（例: fairy_pink.png）
-                fairyImg.src = `fairy_${resultColor}.png`;
+            // ⑤ 【ボイス終了後】コンパクトがふわっと現れ、しゃらら〜ん
+            colorVoice.onended = () => {
+                // ルーレットを隠して結果エリア（コンパクト）を表示
+                rouletteWrap.style.display = "none";
+                resultWrap.style.display = "flex";
                 
-                // 最初は透明・縮小状態
-                fairyImg.style.opacity = '0';
-                fairyImg.style.transform = 'scale(0.5) translate(-50%, -50%)'; // 中央配置などのCSSに応じて調整してください
-                fairyImg.style.display = 'block';
-                fairyImg.style.transition = 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.5)';
+                // コンパクトを初期状態（透明・縮小）にしてからフェードイン
+                compactImg.style.opacity = '0';
+                compactImg.style.transform = 'scale(0.3)';
+                compactImg.style.transition = 'opacity 0.6s ease-out, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
                 
-                // ポワンと大きく浮き出るように登場
                 requestAnimationFrame(() => {
-                    fairyImg.style.opacity = '1';
-                    fairyImg.style.transform = 'scale(1.2) translate(-50%, -50%)'; // 一瞬大きめにして目立たせる
-                    
-                    // 少し経ったら等倍(1.0)に落ち着かせる
-                    setTimeout(() => {
-                        fairyImg.style.transform = 'scale(1.0) translate(-50%, -50%)';
-                    }, 500);
+                    compactImg.style.opacity = '1';
+                    compactImg.style.transform = 'scale(1.0)';
                 });
-            }
 
-            // すべての変身・決定演出が完了したので、ボタンを再び押せるようにする
-            isSpinning = false;
-            startBtn.disabled = false;
-        };
+                // しゃらら〜ん音（きらきら輝く3.mp3）を再生
+                const kirakiraAudio = document.getElementById("audio_kirakira");
+                if (kirakiraAudio) {
+                    kirakiraAudio.currentTime = 0;
+                    kirakiraAudio.play().catch(e => console.log("きらきら音再生エラー:", e));
+                    
+                    // ⑥ 【しゃらら〜ん終了後】妖精が出てくる！
+                    kirakiraAudio.onended = () => {
+                        // 当選した色の妖精画像と名前を設定
+                        fairyImg.src = FAIRY_DATA[targetColor].img;
+                        serifuBox.innerText = FAIRY_DATA[targetColor].name;
+                        
+                        // アニメーション用クラス（ふわふわ浮く効果など）を付与
+                        fairyImg.classList.add('fairy-appear', 'fairy-float');
 
-}, 200);
-            }, 500);
-        }, 2000);
-    }, 4000);
+                        // すべての変身演出が完了したので、ボタンを復帰
+                        isSpinning = false;
+                        startBtn.disabled = false;
+                    };
+                } else {
+                    // 万が一きらきら音が取得できなかった場合のフォールバック
+                    isSpinning = false;
+                    startBtn.disabled = false;
+                }
+            };
+        }, 200);
+
+    }, 4000); // 💡 transitionの4秒（4000ms）に合わせて停止処理を動かします
 });
 </script>
 
