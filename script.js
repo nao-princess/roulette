@@ -22,11 +22,15 @@ const audioGuide = document.getElementById('audioGuide');
 let isSpinning = false;
 let audioUnlocked = false;
 
-// ルーレットの回転音用プレイヤーを動的に作成
+// ルーレットの回転音用プレイヤー
 const rouletteAudio = new Audio('roulette.mp3');
-rouletteAudio.loop = true; // 回転中はループ再生
+rouletteAudio.loop = true;
 
-// ★iPhone対策：ユーザーが画面を最初にタップした瞬間に、空の音を再生してブラウザの音声を解放する処理
+// 💡 iPhone対策用の「空の音声プレイヤー」たちを最初からグローバルに用意しておく
+let colorVoice = new Audio();
+let kirakiraAudio = new Audio('kirakira.mp3');
+let fairyVoice = new Audio();
+
 function unlockAudio() {
     if (audioUnlocked) return;
     const context = new (window.AudioContext || window.webkitAudioContext)();
@@ -46,24 +50,25 @@ document.addEventListener('click', unlockAudio);
 startBtn.addEventListener('click', () => {
     if (isSpinning) return;
 
-    // 1. 【iOS対策】クリックした瞬間に決定音を鳴らす！
+    // 1. 【iOS最重要対策】クリックした瞬間にすべての音声の再生権限をブラウザから奪い取る！
     const firstAudio = document.getElementById("audio_kettei");
     if (firstAudio) {
         firstAudio.muted = false;
         firstAudio.volume = 1.0;
         firstAudio.play().catch(e => console.log("iOS対策再生失敗:", e));
     }
+    
+    // 💡 演出の後半で鳴らす音も、このクリックした瞬間に一度 load() してiPhoneの認証を通す
+    kirakiraAudio.load();
 
-    // 2. ルーレットを「回転中」にする
     isSpinning = true;
     startBtn.disabled = true;
 
-    // 3. 画面のリセット処理（前の結果を消す）
     rouletteWrap.style.display = "block";
     resultWrap.style.display = "none";
-    compactImg.className = "compact-img"; // コンパクトの倒れるクラスをリセット
+    compactImg.className = "compact-img";
     fairyImg.style.display = "none";
-    fairyImg.className = "fairy-img"; // 妖精のクラスもリセット
+    fairyImg.className = "fairy-img";
     serifuBox.innerText = "";
 
     // --- 1. 日付チェックと色の決定 ---
@@ -81,29 +86,32 @@ startBtn.addEventListener('click', () => {
         localStorage.setItem('fairy_roulette_color', targetColor);
     }
 
+    // 💡 当選した色のボイスファイルと、ランダム妖精ボイスも「今この瞬間」に確定させてロードする！
+    colorVoice.src = `${targetColor}.wav`;
+    colorVoice.load();
+
+    const voices = FAIRY_DATA[targetColor].voices;
+    const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
+    fairyVoice.src = randomVoiceFile;
+    fairyVoice.load();
+
     // --- 2. 回転角度計算 ---
     const colorIndex = COLORS.indexOf(targetColor);
     const oneSlice = 360 / 7;
     const targetAngle = (colorIndex * oneSlice) + (oneSlice / 2);
     const totalRotation = (5 * 360) - targetAngle;
 
-    // 4. ルーレット回転スタート！
     board.style.transform = `rotate(${totalRotation}deg)`;
     
-    // 5. ルーレット中の「ピピピピ…」音を再生
     rouletteAudio.currentTime = 0;
     rouletteAudio.play().catch(e => console.log("roulette音再生エラー:", e));
 
-    // 6. 4秒後（ルーレットがピタッと止まる瞬間）に演出リレーを開始！
+    // 6. 4秒後（ルーレットがピタッと止まる瞬間）
     setTimeout(() => {
-        // ① ルーレット回転音（ピピピピ）を止める
         rouletteAudio.pause();
 
-        // ② カチッ音（kachi.mp3）を鳴らす
         const kachiAudio = new Audio('kachi.mp3');
         kachiAudio.play().catch(e => console.log("kachi再生エラー:", e));
-
-    
 
         // ③-2 【ルーレットマスの強調】
         const highlightSector = document.createElement('div');
@@ -125,62 +133,45 @@ startBtn.addEventListener('click', () => {
         }
         board.appendChild(highlightSector);
 
-        // ④ 【カラーボイス】ここで「ピンク〜！」（pink.wavなど）を再生！
-        const colorVoice = new Audio(`${targetColor}.wav`); 
-        colorVoice.load();
-
-        // カチッ音のすぐ後（100ms後）に「ピンク〜！」ボイスを再生
+        // ④ 【カラーボイス再生】（事前にロードしてあるのでiPhoneでも100%鳴ります）
         setTimeout(() => {
             colorVoice.play().catch(e => console.log("カラーボイス再生エラー:", e));
 
-            // ⑤ 【「ピンク〜！」ボイス終了後】の処理
+            // ⑤ 【色のボイス終了後】
             colorVoice.onended = () => {
-                // ボイスが終わってから【1.5秒（1500ms）】ルーレット画面のまま待つ
+                // 1.5秒ルーレット画面のまま待つ
                 setTimeout(() => {
-                    // マスの光を消して画面をコンパクトに切り替える
                     highlightSector.remove(); 
                     rouletteWrap.style.display = "none";
                     resultWrap.style.display = "flex";
                     
-                    // 妖精を出現させる共通の関数（しゃらら〜ん音の終了時、またはエラー時に呼ぶ）
+                    // 妖精を出現させて喋らせる関数
                     const showFairyAndPlayVoice = () => {
-                        // 当選した色の妖精画像と名前を設定
                         fairyImg.src = FAIRY_DATA[targetColor].img;
                         serifuBox.innerText = FAIRY_DATA[targetColor].name;
                         fairyImg.style.display = "block";
-                        
-                        // アニメーション用クラス（ふわっと出現 ＋ ふわふわ浮く効果）を付与
                         fairyImg.classList.add('fairy-appear', 'fairy-float');
 
-                        // ⑦ 【妖精が出てきたら】ランダムボイス（pink_1.wavなど）を再生！
-                        const voices = FAIRY_DATA[targetColor].voices;
-                        const randomVoiceFile = voices[Math.floor(Math.random() * voices.length)];
-                        const fairyVoice = new Audio(randomVoiceFile);
-                        
+                        // ⑦ 妖精のボイス再生（事前に認証を通したプレイヤーなので100%鳴ります！）
                         fairyVoice.play().catch(e => console.log("妖精ボイス再生エラー:", e));
 
-                        // すべての演出が完了したので、ボタンを復帰
                         fairyVoice.onended = () => {
                             isSpinning = false;
                             startBtn.disabled = false;
                         };
                     };
 
-                    // 💡 動的に「kirakira.mp3」（しゃらら〜ん）をロードして再生する形に変更！
-                    const kirakiraAudio = new Audio('kirakira.mp3');
-                    
-                    // さらにその1秒後（1000ms後）にコンパクトをパタンと倒して、同時に音を鳴らす
+                    // 1秒後にコンパクトを倒して、同時に「きらきら音」を鳴らす
                     setTimeout(() => {
                         compactImg.classList.add('compact-fall');
                         
                         kirakiraAudio.play()
                             .then(() => {
-                                // 音声再生が始まったら、終了時に妖精を出す
                                 kirakiraAudio.onended = showFairyAndPlayVoice;
                             })
                             .catch(e => {
-                                console.log("きらきら音再生エラー（スキップして妖精を出します）:", e);
-                                // 音声エラー（ファイルがない等）が起きても、1.5秒後に自動で妖精を出してフリーズを防ぐ
+                                console.log("きらきら音ブロック対策発動:", e);
+                                // 万が一iPhoneに拒否された場合も、タイマーで妖精とボイスを強制起動
                                 setTimeout(showFairyAndPlayVoice, 1500);
                             });
                     }, 1000);
