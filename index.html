@@ -124,58 +124,57 @@
             transform: rotateX(75deg) scale(0.95) translateY(30px);
             filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) !important;
         }
-/* ==========================================
-   妖精の出現＆ふわふわアニメーション（自動引き寄せ版）
-   ========================================== */
+
+        /* ==========================================
+   妖精の出現＆ふわふわアニメーション（連動修正版）
+   ========================================= */
 
 .fairy-img {
     position: absolute !important;
-    /* 💡 上下左右すべてを0にして、margin: auto で全方向から引っ張ることで
-       スマホでもPCでも親要素の「本当のど真ん中」に強制固定します */
     top: 0 !important;
     bottom: 0 !important;
     left: 0 !important;
     right: 0 !important;
     margin: auto !important;
     display: none;
-    z-index: 20; /* コンパクトより手前に */
+    z-index: 20;
 }
 
 /* 妖精の出現アニメーション */
 .fairy-appear {
     display: block !important;
-    animation: fairyFadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    /* 💡 二つのアニメーションを1行にまとめ、競合を防ぐために forwards を外しました */
+    animation: fairyFadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+               fairyFloating 3s ease-in-out infinite 0.8s !important;
+}
+
+/* 💡 fairy-float クラスはJSとの互換性のために残しますが、中身は上記と合わせます */
+.fairy-float {
+    display: block !important;
 }
 
 @keyframes fairyFadeIn {
     0% {
         opacity: 0;
-        /* 少し上（-40px）の、小さな状態から登場 */
         transform: translateY(-40px) scale(0.3) !important; 
     }
     100% {
         opacity: 1;
-        /* 綺麗にぴったり真ん中に着地 */
         transform: translateY(0) scale(1) !important;   
     }
 }
 
-/* ふわふわアニメーション */
-.fairy-float {
-    /* 登場アニメーションが終わったら、スムーズにふわふわ（fairyFloating）に移行 */
-    animation: fairyFadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
-               fairyFloating 3s ease-in-out infinite 0.8s !important;
-}
-
 @keyframes fairyFloating {
+    /* 💡 登場時の状態（translateY(0)）からスタートして、綺麗にループさせます */
     0%, 100% {
         transform: translateY(0) scale(1) !important;
     }
     50% {
-        /* パーセントではなく「px」指定にすることで、スマホ画面でもズレずに綺麗に上下に揺れます */
         transform: translateY(-20px) scale(1) !important; 
     }
 }
+        
+        
         /* ==========================================
            3. ボタンとテキスト
         ========================================== */
