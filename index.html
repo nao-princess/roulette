@@ -378,11 +378,12 @@ startBtn.addEventListener('click', () => {
                         mainVoice.play().catch((e) => {
                             console.log("再生エラー:", e);
                         });
-                    }, 100);
 
                     mainVoice.onended = () => {
                         isSpinning = false;
                         startBtn.disabled = false;
+                    };
+                         }, 100);
                 }, 500);
 
             }, 500);
