@@ -103,18 +103,7 @@ startBtn.addEventListener('click', () => {
         const kachiAudio = new Audio('kachi.mp3');
         kachiAudio.play().catch(e => console.log("kachi再生エラー:", e));
 
-        // ③ 【画面フラッシュ】画面を一瞬その色でピカッと光らせる
-        const flashBg = document.createElement('div');
-        Object.assign(flashBg.style, {
-            position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-            backgroundColor: targetColor, opacity: '0.7', zIndex: '9999',
-            pointerEvents: 'none', transition: 'opacity 0.4s ease-out'
-        });
-        document.body.appendChild(flashBg);
-        requestAnimationFrame(() => {
-            flashBg.style.opacity = '0';
-            setTimeout(() => flashBg.remove(), 400);
-        });
+    
 
         // ③-2 【ルーレットマスの強調】
         const highlightSector = document.createElement('div');
