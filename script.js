@@ -164,7 +164,7 @@ startBtn.addEventListener('click', () => {
                 // 元々CSSに用意されていた「パタンと奥に倒れるクラス」を適用する
                 setTimeout(() => {
                     compactImg.classList.add('compact-fall');
-                }, 100);
+                }, 1500);
 
                 // しゃらら〜ん音（きらきら輝く3.mp3）を再生
                 const kirakiraAudio = document.getElementById("audio_kirakira");
